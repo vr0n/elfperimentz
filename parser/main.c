@@ -63,6 +63,9 @@ void parse_elf(unsigned char* elf_file, elf_bin_t* bin) {
   parse_section_headers(elf_file, bin);
 }
 
+// describe_elf prints all major portions of an ELF file.
+// It should only be used for debugging purposes as it assumes
+// all of the ELF struct has been populated.
 void describe_elf(elf_bin_t* bin) {
   printf("ELF HEADER\n");
   printf("===========================\n");
@@ -108,10 +111,8 @@ int main(int argc, char *argv[]) {
   }
 
   unsigned char *elf_file = malloc(stats.st_size);
-  fread(elf_file, sizeof(elf_file), 1, fp);
+  fread(elf_file, stats.st_size, 1, fp);
   elf_bin_t* bin = malloc(sizeof(elf_bin_t));
-
-  printf("%s\n", elf_file);
 
   parse_elf(elf_file, bin);
   describe_elf(bin);
