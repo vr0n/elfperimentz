@@ -5,11 +5,32 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <getopt.h>
-#include "./vrn_elf.h"
 #include "./elf_funcs.h"
 
 #define EHDR_SIZE 64
 #define MAX_PATH 4096
+
+/*
+  Simple colorful logging functions
+*/
+void log_msg(char *log) {
+  fprintf(stdout, "\033[0;34m[+] %s\n\033[0m", log);
+}
+
+void log_err(char *log) {
+  fprintf(stderr, "\033[0;31m[+] %s\n\033[0m", log);
+  exit(1); 
+}
+
+void exit_on_error(int err_no, char *err) {
+  fprintf(stderr, "\033[0;31m[-] %s -- errno: %d\n", err, err_no);
+  exit(1); 
+}
+
+void usage(char* program) {
+  fprintf(stderr, "Usage: %s [ TARGET ] [ OPTIONS ]\n", program);
+  exit(1);
+}
 
 typedef struct elf_bin {
   Elf64_Ehdr* hdr;
@@ -26,7 +47,9 @@ typedef struct elf_bin {
   char* perms_chr;
 } elf_bin_t;
 
-void parse_section_headers(unsigned char* elf_file, elf_bin_t* bin) {
+void
+parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
+{
   unsigned short shnum = bin->hdr->e_shnum;
   bin->shdr = malloc(sizeof(Elf64_Shdr) * shnum);
 
@@ -39,7 +62,9 @@ void parse_section_headers(unsigned char* elf_file, elf_bin_t* bin) {
   }
 }
 
-void parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
+void
+parse_program_headers(unsigned char* elf_file, elf_bin_t* bin)
+{
   unsigned short phnum = bin->hdr->e_phnum;
   bin->phdr = malloc(sizeof(Elf64_Phdr) * phnum);
 
@@ -52,12 +77,15 @@ void parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
   }
 }
 
-void parse_header(unsigned char* elf_file, elf_bin_t* bin) {
+void
+parse_header(unsigned char* elf_file, elf_bin_t* bin)
+{
   bin->hdr = malloc(sizeof(Elf64_Ehdr));
   memcpy(bin->hdr, elf_file, EHDR_SIZE); // Hardcode for now
 }
 
-void parse_elf(unsigned char* elf_file, elf_bin_t* bin) {
+void parse_elf(unsigned char* elf_file, elf_bin_t* bin)
+{
   parse_header(elf_file, bin);
   parse_program_headers(elf_file, bin);
   parse_section_headers(elf_file, bin);
@@ -66,7 +94,9 @@ void parse_elf(unsigned char* elf_file, elf_bin_t* bin) {
 // describe_elf prints all major portions of an ELF file.
 // It should only be used for debugging purposes as it assumes
 // all of the ELF struct has been populated.
-void describe_elf(elf_bin_t* bin) {
+void
+describe_elf(elf_bin_t* bin)
+{
   printf("ELF HEADER\n");
   printf("===========================\n");
   printf("MACHINE TYPE: %d\n", bin->hdr->e_machine);
@@ -84,23 +114,27 @@ void describe_elf(elf_bin_t* bin) {
   printf("SECTION STRING TABLE INDEX: %d\n", bin->hdr->e_shstrndx);
 }
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[])
+{
   if (argc < 2) {
     usage(argv[0]);
-    exit(1);
+    return -1;
   }
 
   char* elf_file_name = argv[1];
 
   struct stat stats;
   if (stat(elf_file_name, &stats) == 0) {
-    log_msg("Opened file. Parsing ELF...");
+    printf("Opened file. Parsing ELF...");
   } else {
-    log_err("File not found.");
+    printf("File not found.");
+    return -1;
   }
 
-  if (check_modes(stats)) {
-    log_err("File must be readable, writeable, and executable. Exiting...");
+  if (!(stats.st_mode & S_IRWXU)) {
+    printf("File must have read, write, and execute perms...\n");
+    return -1;
   }
 
   FILE *fp;
@@ -116,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   parse_elf(elf_file, bin);
   describe_elf(bin);
-  log_msg("Closing target and exiting...");
+  printf("Closing target and exiting...");
   fclose(fp);
   return 0;
 }
