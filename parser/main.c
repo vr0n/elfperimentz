@@ -81,14 +81,22 @@ void
 parse_header(unsigned char* elf_file, elf_bin_t* bin)
 {
   bin->hdr = malloc(sizeof(Elf64_Ehdr));
-  memcpy(bin->hdr, elf_file, EHDR_SIZE); // Hardcode for now
+  memcpy(bin->hdr, elf_file, EHDR_SIZE);
 }
 
-void parse_elf(unsigned char* elf_file, elf_bin_t* bin)
+void
+parse_sections(unsigned char* elf_file, elf_bin_t* bin)
+{
+  return;
+}
+
+void
+parse_elf(unsigned char* elf_file, elf_bin_t* bin)
 {
   parse_header(elf_file, bin);
   parse_program_headers(elf_file, bin);
   parse_section_headers(elf_file, bin);
+  parse_sections(elf_file, bin);
 }
 
 // describe_elf prints all major portions of an ELF file.
@@ -118,17 +126,16 @@ int
 main(int argc, char *argv[])
 {
   if (argc < 2) {
-    usage(argv[0]);
-    return -1;
+    usage(argv[0]); // Usage auto-exits with status 1
   }
 
   char* elf_file_name = argv[1];
 
   struct stat stats;
   if (stat(elf_file_name, &stats) == 0) {
-    printf("Opened file. Parsing ELF...");
+    printf("Opened file. Parsing ELF...\n");
   } else {
-    printf("File not found.");
+    printf("File not found.\n");
     return -1;
   }
 
@@ -140,7 +147,7 @@ main(int argc, char *argv[])
   FILE *fp;
   fp = fopen(elf_file_name, "r+b");
   if (fp == NULL) {
-    char *fp_err = strcpy("Could not open file: %s", elf_file_name);
+    char *fp_err = strcpy("Could not open file: %s\n", elf_file_name);
     exit_on_error(errno, fp_err);
   }
 
@@ -150,7 +157,7 @@ main(int argc, char *argv[])
 
   parse_elf(elf_file, bin);
   describe_elf(bin);
-  printf("Closing target and exiting...");
+  printf("Closing target and exiting...\n");
   fclose(fp);
   return 0;
 }
