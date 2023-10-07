@@ -1,62 +1,85 @@
-#define EI_NIDENT 16 // Byte length of the ELF magic
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned short Elf64_Half;      // 2 bytes
-typedef signed short Elf64_SHalf;       // 2 bytes
-typedef unsigned long long Elf64_Off;   // 8 bytes
-typedef unsigned int Elf64_Word;        // 4 bytes
-typedef signed int Elf64_SWord;         // 4 bytes
-typedef unsigned long long Elf64_Xword; // 8 bytes
-typedef signed long long Elf64_SXword;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
-typedef unsigned long long Elf64_Addr;  // 8 bytes
+#include "elf_funcs.h"
+#include "utils.h"
 
-typedef struct {
-  unsigned char e_ident[EI_NIDENT]; // 16 bytes: To capture the ELF magic
-  Elf64_Half e_type;      // 2 bytes: Object file type
-  Elf64_Half e_machine;   // 2 bytes: Machine type
-  Elf64_Word e_version;   // 4 bytes: Object file version
-  Elf64_Addr e_entry;     // 8 bytes: Entry point address
-  Elf64_Off e_phoff;      // 8 bytes: Program header offset
-  Elf64_Off e_shoff;      // 8 bytes: Section header offset
-  Elf64_Word e_flags;     // 4 bytes: Processor specific flags
-  Elf64_Half e_ehsize;    // 2 bytes: Elf header size
-  Elf64_Half e_phentsize; // 2 bytes: Size of program header entry
-  Elf64_Half e_phnum;     // 2 bytes: Number of program header entries
-  Elf64_Half e_shentsize; // 2 bytes: Size of section header entry
-  Elf64_Half e_shnum;     // 2 bytes: Number of section header entries
-  Elf64_Half e_shstrndx;  // 2 bytes: Section name string table index
-} Elf64_Ehdr; // 64 bytes
+void
+parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
+{
+  log_msg("Parsing ELF section headers");
+  unsigned short shnum = bin->hdr->e_shnum;
+  bin->shdr = malloc(sizeof(Elf64_Shdr) * shnum);
 
-typedef struct {
-  Elf64_Word p_type;    // 4 bytes: Segment type
-  Elf64_Word p_flags;   // 4 bytes: Segment flags
-  Elf64_Off p_offset;   // 8 bytes: Offset of this segment from start of file
-  Elf64_Addr p_vaddr;   // 8 bytes: Address in memory
-  Elf64_Addr p_paddr;   // 8 bytes: For physical addressing systems
-  Elf64_Xword p_filesz; // 8 bytes: File image size of this segment
-  Elf64_Xword p_memsz;  // 8 bytes: Memory image size of this segment
-  Elf64_Xword p_align;  // 8 bytes: Alginment constraint of this segment
-} Elf64_Phdr; // 56 bytes
+  unsigned char* tmp_file = elf_file;
+  tmp_file = tmp_file + bin->hdr->e_shoff;
 
-typedef struct {
-} Elf64_Shdr;
+  for (int i = 0; i < shnum; i++) {
+    memcpy(bin->shdr + (sizeof(Elf64_Shdr) * 1), tmp_file, sizeof(Elf64_Shdr));
+    tmp_file = tmp_file + sizeof(Elf64_Shdr);
+  }
+}
 
-typedef struct {
-} Elf64_Sec;
+void 
+parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
+  log_msg("Parsing ELF program headers");
+  unsigned short phnum = bin->hdr->e_phnum;
+  bin->phdr = malloc(sizeof(Elf64_Phdr) * phnum);
 
-typedef struct {
-} Elf64_Seg;
+  unsigned char* tmp_file = elf_file;
+  tmp_file = tmp_file+ bin->hdr->e_phoff;
 
-typedef struct Elf_File {
-  FILE  *binary; // Pointer to FILE that is our open ELF binary
-  Elf64_Ehdr elf_header; // 64 bytes: Header
-  Elf64_Phdr prog_headers[13]; // 56 bytes each: Array of program headers
-} Elf_File;
+  for (int i = 0; i < phnum; i++) {
+    memcpy(bin->phdr + (sizeof(Elf64_Phdr) * i), tmp_file, sizeof(Elf64_Phdr));
+    tmp_file = tmp_file + sizeof(Elf64_Phdr);
+  }
+}
+
+void
+parse_header(unsigned char* elf_file, elf_bin_t* bin)
+{
+  log_msg("Parsing ELF header");
+  bin->hdr = malloc(sizeof(Elf64_Ehdr));
+  memcpy(bin->hdr, elf_file, EHDR_SIZE);
+}
+
+void
+parse_sections(unsigned char* elf_file, elf_bin_t* bin)
+{
+  log_msg("Parsing ELF sections");
+  return;
+}
+
+void
+parse_elf(unsigned char* elf_file, elf_bin_t* bin)
+{
+  log_msg("Parsing ELF");
+  parse_header(elf_file, bin);
+  parse_program_headers(elf_file, bin);
+  parse_section_headers(elf_file, bin);
+  parse_sections(elf_file, bin);
+}
+
+void
+describe_elf(elf_bin_t* bin)
+{
+  printf("ELF HEADER\n");
+  printf("===========================\n");
+  printf("MACHINE TYPE: %d\n", bin->hdr->e_machine);
+  printf("OBJECT FILE TYPE: %d\n", bin->hdr->e_type);
+  printf("OBJECT FILE VERSION: %d\n", bin->hdr->e_version);
+  printf("ENTRY POINT: 0x%llx\n", bin->hdr->e_entry);
+  printf("PROGRAM HEADER OFFSET: 0x%llx\n", bin->hdr->e_phoff);
+  printf("SECTION HEADER OFFSET: 0x%llx\n", bin->hdr->e_shoff);
+  printf("PROCESSOR FLAGS: %d\n", bin->hdr->e_flags);
+  printf("HEADER SIZE: %d\n", bin->hdr->e_ehsize);
+  printf("PROGRAM HEADER SIZE: %d\n", bin->hdr->e_phentsize);
+  printf("PROGRAM HEADERS: %d\n", bin->hdr->e_phnum);
+  printf("SECTION HEADER SIZE: %d\n", bin->hdr->e_shentsize);
+  printf("SECTION HEADERS: %d\n", bin->hdr->e_shnum);
+  printf("SECTION STRING TABLE INDEX: %d\n", bin->hdr->e_shstrndx);
+}
 
 char* map_phdr_types(unsigned int type) {
   char* phdr_type;
