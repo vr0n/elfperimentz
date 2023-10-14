@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <getopt.h>
 #include "lib/elf_funcs.h"
 #include "lib/utils.h"
 
@@ -15,17 +14,17 @@ main(int argc, char *argv[])
     usage(argv[0]); // Usage auto-exits with status 1
   }
 
-  char* elf_file_name = argv[argc - 1];
-
   long* args = calloc(1, sizeof(long));
   read_args(argv, args);
 
-  // Handle args that exit first
+  // Handle args that self-exit first
   if (*args & HELP_ARG) {
     help(argv[0]);
     return FUNC_PASS;
   }
 
+  // Then everything else
+  char* elf_file_name = argv[argc - 1]; // We don't need this before now
   struct stat stats;
   if (stat(elf_file_name, &stats) == 0) {
     log_msg("Opened file. Parsing ELF...");
@@ -50,9 +49,13 @@ main(int argc, char *argv[])
   fread(elf_file, stats.st_size, 1, fp);
   elf_bin_t* bin = malloc(sizeof(elf_bin_t));
 
-  parse_elf(elf_file, bin);
-  describe_elf(bin);
+  if (*args & PARSE_ARG) {
+    parse_elf(elf_file, bin);
+    describe_elf(bin);
+  }
+ 
   log_msg("Closing target and exiting...\n");
   fclose(fp);
+
   return FUNC_PASS;
 }
