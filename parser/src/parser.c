@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <getopt.h>
-#include "elf_funcs.h"
-#include "utils.h"
+#include "lib/elf_funcs.h"
+#include "lib/utils.h"
 
 #define MAX_PATH 4096
 
@@ -107,22 +107,27 @@ main(int argc, char *argv[])
     usage(argv[0]); // Usage auto-exits with status 1
   }
 
-  long long args = 0x0;
-  read_args(argv);
+  long* args = calloc(1, sizeof(long));
+  char* elf_file_name;
+  read_args(argv, args, elf_file_name);
 
-  char* elf_file_name = argv[1];
+  // Handle args that exit first
+  if (*args & HELP_ARG) {
+    help(argv[0]);
+    return FUNC_PASS;
+  }
 
   struct stat stats;
   if (stat(elf_file_name, &stats) == 0) {
     log_msg("Opened file. Parsing ELF...");
   } else {
     log_err("File not found.");
-    return -1;
+    return FUNC_FAIL;
   }
 
   if (!(stats.st_mode & S_IRWXU)) {
     printf("File must have read, write, and execute perms...\n");
-    return -1;
+    return FUNC_FAIL;
   }
 
   FILE *fp;
@@ -140,5 +145,5 @@ main(int argc, char *argv[])
   describe_elf(bin);
   log_msg("Closing target and exiting...\n");
   fclose(fp);
-  return 0;
+  return FUNC_PASS;
 }

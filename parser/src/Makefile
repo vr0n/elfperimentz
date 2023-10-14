@@ -1,5 +1,5 @@
 all:
-	gcc -o parser parser.c utils.c elf_funcs.c
+	gcc -o parser parser.c lib/utils.c lib/elf_funcs.c
 
 clean:
 	rm -rf parser
