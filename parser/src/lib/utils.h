@@ -9,6 +9,8 @@
 #define FUNC_TRUE  1
 #define FUNC_FALSE 0
 
+#define MAX_PATH 4096
+
 int read_args(char**, long*);
 void log_msg(char*);
 void log_err(char*);
