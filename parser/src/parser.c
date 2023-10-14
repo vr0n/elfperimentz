@@ -107,8 +107,9 @@ main(int argc, char *argv[])
     usage(argv[0]); // Usage auto-exits with status 1
   }
 
+  char* elf_file_name = argv[argc - 1];
+
   long* args = calloc(1, sizeof(long));
-  char* elf_file_name;
   read_args(argv, args, elf_file_name);
 
   // Handle args that exit first

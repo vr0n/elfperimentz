@@ -43,7 +43,7 @@ parse_arg(char* arg, long* args)
 }
 
 int
-read_args(char** argv, long* arg_set, char* target_elf)
+read_args(char** argv, long* arg_set)
 {
 
   int offset = 1; // Skip arg 0, which is just the program name
@@ -51,11 +51,6 @@ read_args(char** argv, long* arg_set, char* target_elf)
     parse_arg(argv[offset], arg_set);
     offset++;
   }
-
-  // Set ptr to final arg.
-  // We have already checked that argc > 2 at this point,
-  // so we should be good
-  target_elf = argv[offset - 1];
 
   return FUNC_PASS;
 }
@@ -92,6 +87,7 @@ help(char* program)
   fprintf(stdout, "    -h    Print this help menu\n");
   fprintf(stdout, "    -d    Run parsers on the data section of the ELF\n");
   fprintf(stdout, "    -p    Fully parse the ELF and print results\n");
+  fprintf(stdout, "    -v    Log verbosely\n");
 
   exit(FUNC_PASS);
 }
