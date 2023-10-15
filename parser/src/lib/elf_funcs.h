@@ -3,6 +3,18 @@
 #define EHDR_64_SIZE 64
 #define EHDR_SIZE    64 // Assume 64-bit for now
 
+#define EHDR_LOAD         0x01
+#define EHDR_DYNAMIC      0x02
+#define EHDR_INTERP       0x03
+#define EHDR_NOTE_1       0x04
+#define EHDR_NOTE_2       0x05
+#define EHDR_PHDR         0x06
+#define EHDR_GNU_EH_FRAME 0x6474e550
+#define EHDR_GNU_STACK    0x6474e551
+#define EHDR_GNU_RELRO    0x6474e552
+#define EHDR_GNU_PROPERTY 0x6474e553
+#define EHDR_UNKNOWN      NULL
+
 typedef unsigned long long Elf64_Addr;  // 8 bytes
 typedef unsigned short Elf64_Half;      // 2 bytes
 typedef signed short Elf64_SHalf;       // 2 bytes

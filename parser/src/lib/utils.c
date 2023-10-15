@@ -61,13 +61,13 @@ read_args(char** argv, long* arg_set)
 void
 log_msg(char *log)
 {
-  fprintf(stdout, "\n\033[0;34m[+] %s\n\033[0m\n", log);
+  fprintf(stdout, "\033[0;34m[+] %s\n\033[0m", log);
 }
 
 void
 log_err(char *log)
 {
-  fprintf(stderr, "\n\033[0;31m[+] %s\n\033[0m\n", log);
+  fprintf(stderr, "\033[0;31m[+] %s\n\033[0m", log);
   exit(FUNC_FAIL); 
 }
 

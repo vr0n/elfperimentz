@@ -34,7 +34,7 @@ main(int argc, char *argv[])
   }
 
   if (!(stats.st_mode & S_IRWXU)) {
-    printf("File must have read, write, and execute perms...\n");
+    log_err("File must have read, write, and execute perms...");
     return FUNC_FAIL;
   }
 

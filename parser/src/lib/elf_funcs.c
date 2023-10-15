@@ -66,18 +66,18 @@ describe_elf(elf_bin_t* bin)
 {
   printf("ELF HEADER\n");
   printf("===========================\n");
-  printf("MACHINE TYPE: %d\n", bin->hdr->e_machine);
-  printf("OBJECT FILE TYPE: %d\n", bin->hdr->e_type);
-  printf("OBJECT FILE VERSION: %d\n", bin->hdr->e_version);
-  printf("ENTRY POINT: 0x%llx\n", bin->hdr->e_entry);
-  printf("PROGRAM HEADER OFFSET: 0x%llx\n", bin->hdr->e_phoff);
-  printf("SECTION HEADER OFFSET: 0x%llx\n", bin->hdr->e_shoff);
-  printf("PROCESSOR FLAGS: %d\n", bin->hdr->e_flags);
-  printf("HEADER SIZE: %d\n", bin->hdr->e_ehsize);
-  printf("PROGRAM HEADER SIZE: %d\n", bin->hdr->e_phentsize);
-  printf("PROGRAM HEADERS: %d\n", bin->hdr->e_phnum);
-  printf("SECTION HEADER SIZE: %d\n", bin->hdr->e_shentsize);
-  printf("SECTION HEADERS: %d\n", bin->hdr->e_shnum);
+  printf("MACHINE TYPE:               %d\n", bin->hdr->e_machine);
+  printf("OBJECT FILE TYPE:           %d\n", bin->hdr->e_type);
+  printf("OBJECT FILE VERSION:        %d\n", bin->hdr->e_version);
+  printf("ENTRY POINT:                0x%llx\n", bin->hdr->e_entry);
+  printf("PROGRAM HEADER OFFSET:      0x%llx\n", bin->hdr->e_phoff);
+  printf("SECTION HEADER OFFSET:      0x%llx\n", bin->hdr->e_shoff);
+  printf("PROCESSOR FLAGS:            %d\n", bin->hdr->e_flags);
+  printf("HEADER SIZE:                %d\n", bin->hdr->e_ehsize);
+  printf("PROGRAM HEADER SIZE:        %d\n", bin->hdr->e_phentsize);
+  printf("PROGRAM HEADERS:            %d\n", bin->hdr->e_phnum);
+  printf("SECTION HEADER SIZE:        %d\n", bin->hdr->e_shentsize);
+  printf("SECTION HEADERS:            %d\n", bin->hdr->e_shnum);
   printf("SECTION STRING TABLE INDEX: %d\n", bin->hdr->e_shstrndx);
 }
 
@@ -180,14 +180,14 @@ unsigned long long parse_elf_header(FILE *fp, Elf64_Ehdr *ehdr) {
 }
 
 void print_program_header(Elf64_Phdr *phdr) {
-  printf("Type:\t%s\t",         map_phdr_types(phdr->p_type));
-  printf("Perms:\t%s\t\t",      map_perms(phdr->p_flags));
-  printf("Offset:\t0x%llx\t",  phdr->p_offset);
-  printf("Vaddr:\t0x%llx\n",   phdr->p_vaddr);
-  printf("Paddr:\t0x%llx\t",   phdr->p_paddr);
-  printf("Filesz:\t0x%llx\t",  phdr->p_filesz);
-  printf("Memsz:\t0x%llx\t",   phdr->p_memsz);
-  printf("Align:\t0x%llx\n\n", phdr->p_align);
+  printf("Type:        %s        ",        map_phdr_types(phdr->p_type));
+  printf("Perms:       %s        ",     map_perms(phdr->p_flags));
+  printf("Offset:      0x%llx    ",  phdr->p_offset);
+  printf("Vaddr:       0x%llx    ",   phdr->p_vaddr);
+  printf("Paddr:       0x%llx    ",   phdr->p_paddr);
+  printf("Filesz:      0x%llx    ",  phdr->p_filesz);
+  printf("Memsz:       0x%llx    ",   phdr->p_memsz);
+  printf("Align:       0x%llx    \n", phdr->p_align);
 }
 
 void parse_program_header(FILE *fp, Elf64_Phdr *phdr) {
