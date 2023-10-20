@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 
   FILE *fp;
   fp = fopen(elf_file_name, "r+b");
-  if (fp == NULL) {
+  if (NULL == fp) {
     char *fp_err = strcpy("Could not open file: %s\n", elf_file_name);
     exit_on_error(errno, fp_err);
   }

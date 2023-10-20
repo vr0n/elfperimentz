@@ -5,6 +5,56 @@
 #include "elf_funcs.h"
 #include "utils.h"
 
+static char*
+get_phdr_perms_from_int(int perms) {
+  switch(perms) {
+    case 1:
+      return "--X";
+    case 2:
+      return "-W-";
+    case 3:
+      return "-WX";
+    case 4:
+      return "R--";
+    case 5:
+      return "R-X";
+    case 6:
+      return "RW-";
+    case 7:
+      return "RWX";
+    default:
+      return "UNKOWN";
+  }
+}
+
+static char*
+get_program_header_from_int(int phdr) {
+  switch(phdr) {
+    case 0x01:
+      return "EHDR_LOAD\0";
+    case 0x02:
+      return "EHDR_DYNAMIC\0";
+    case 0x03:
+      return "EHDR_INTERP\0";
+    case 0x04:
+      return "EHDR_NOTE\0";
+    case 0x05:
+      return "EHDR_NOTE";
+    case 0x06:
+      return "EHDR_PHDR\0";
+    case 0x06474e550:
+      return "EHDR_GNU_EH_FRAME\0";
+    case 0x06474e551:
+      return "EHDR_GNU_STACK\0";
+    case 0x06474e552:
+      return "EHDR_GNU_RELRO\0";
+    case 0x06474e553:
+      return "EHDR_GNU_PROPERTY\0";
+    default:
+      return "EHDR_UNKNOWN\0";
+  }
+}
+
 void
 parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
 {
@@ -21,14 +71,19 @@ parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
   }
 }
 
-void 
+void* 
 parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
   log_msg("Parsing ELF program headers");
   unsigned short phnum = bin->hdr->e_phnum;
   bin->phdr = malloc(sizeof(Elf64_Phdr) * phnum);
+  if (NULL == bin->phdr) {
+    log_err("Failed to allocate space for program headers");
+
+    return NULL;
+  }
 
   unsigned char* tmp_file = elf_file;
-  tmp_file = tmp_file+ bin->hdr->e_phoff;
+  tmp_file = tmp_file + bin->hdr->e_phoff; // Get to program header offset
 
   for (int i = 0; i < phnum; i++) {
     memcpy(bin->phdr + (sizeof(Elf64_Phdr) * i), tmp_file, sizeof(Elf64_Phdr));
@@ -62,98 +117,65 @@ parse_elf(unsigned char* elf_file, elf_bin_t* bin)
 }
 
 void
-describe_elf(elf_bin_t* bin)
-{
-  printf("ELF HEADER\n");
-  printf("===========================\n");
-  printf("MACHINE TYPE:               %d\n", bin->hdr->e_machine);
-  printf("OBJECT FILE TYPE:           %d\n", bin->hdr->e_type);
-  printf("OBJECT FILE VERSION:        %d\n", bin->hdr->e_version);
-  printf("ENTRY POINT:                0x%llx\n", bin->hdr->e_entry);
-  printf("PROGRAM HEADER OFFSET:      0x%llx\n", bin->hdr->e_phoff);
-  printf("SECTION HEADER OFFSET:      0x%llx\n", bin->hdr->e_shoff);
-  printf("PROCESSOR FLAGS:            %d\n", bin->hdr->e_flags);
-  printf("HEADER SIZE:                %d\n", bin->hdr->e_ehsize);
-  printf("PROGRAM HEADER SIZE:        %d\n", bin->hdr->e_phentsize);
-  printf("PROGRAM HEADERS:            %d\n", bin->hdr->e_phnum);
-  printf("SECTION HEADER SIZE:        %d\n", bin->hdr->e_shentsize);
-  printf("SECTION HEADERS:            %d\n", bin->hdr->e_shnum);
-  printf("SECTION STRING TABLE INDEX: %d\n", bin->hdr->e_shstrndx);
-}
-
-char* map_phdr_types(unsigned int type) {
-  char* phdr_type;
-
-  switch(type) {
-    case 1: phdr_type = "LOAD\t";
-            break;
-    case 2: phdr_type = "DYNAMIC\t";
-            break;
-    case 3: phdr_type = "INTERP\t";
-            break;
-    case 4: phdr_type = "NOTE\t";
-            break;
-    case 5: phdr_type = "NOTE\t";
-            break;
-    case 6: phdr_type = "PHDR\t";
-            break;
-    case 1685382480: phdr_type = "GNU_EH_FRAME";
-            break;
-    case 1685382481: phdr_type = "GNU_STACK";
-            break;
-    case 1685382482: phdr_type = "GNU_RELRO";
-            break;
-    case 1685382483: phdr_type = "GNU_PROPERTY";
-            break;
-    default: phdr_type = "UKNOWN\t";
-  }
-
-  return phdr_type;
-}
-
-char* map_perms(unsigned int perms) {
-  char* phdr_perms;
-
-  switch(perms) {
-    case 1: phdr_perms = "--X";
-            break;
-    case 2: phdr_perms = "-W-";
-            break;
-    case 3: phdr_perms = "-WX";
-            break;
-    case 4: phdr_perms = "R--";
-            break;
-    case 5: phdr_perms = "R-X";
-            break;
-    case 6: phdr_perms = "RW-";
-            break;
-    case 7: phdr_perms = "RWX";
-            break;
-    default: phdr_perms = "UNKOWN";
-  }
-
-  return phdr_perms;
-}
-
-void print_elf_header(Elf64_Ehdr *ehdr) {
+print_elf_header(elf_bin_t* bin) {
   printf("Magic:\t");
   for (int i = 0; i < EI_NIDENT; i++) {
-    printf("%.2x ", ehdr->e_ident[i]);
+    printf("%.2x ", bin->hdr->e_ident[i]);
   }
 
-  printf("\nType:\t %u\t\t\t\t", ehdr->e_type);
-  printf("Machine:\t%u\n", ehdr->e_machine);
-  printf("Version: %u\t\t\t\t", (unsigned short)(ehdr->e_version));
-  printf("Entry Address:\t0x%.08llx\n", ehdr->e_entry);
-  printf("Program Header Offset:\t0x%llx\t", ehdr->e_phoff);
-  printf("Section Header Offset:\t0x%llx\n", ehdr->e_shoff);
-  printf("Flags:\t %u\t\t\t\t", (unsigned short)(ehdr->e_flags));
-  printf("Elf Header Size:\t%u\n", (unsigned short)(ehdr->e_ehsize));
-  printf("Program Header Size:\t%u\t\t", (unsigned short)(ehdr->e_phentsize));
-  printf("Program Headers:\t%u\n", (unsigned short)(ehdr->e_phnum));
-  printf("Section Header Size:\t%u\t\t", (unsigned short)(ehdr->e_shentsize));
-  printf("Section Headers:\t%u\n", (unsigned short)(ehdr->e_shnum));
-  printf("String Table Index:\t%u\n\n", (unsigned short)(ehdr->e_shstrndx));
+  printf("\nElf header\n");
+  printf("===========================\n");
+  printf("Machine type:               %d\n", bin->hdr->e_machine);
+  printf("Object file type:           %d\n", bin->hdr->e_type);
+  printf("Object file version:        %d\n", bin->hdr->e_version);
+  printf("Entry point:                0x%llx\n", bin->hdr->e_entry);
+  printf("Program header offset:      0x%llx\n", bin->hdr->e_phoff);
+  printf("Section header offset:      0x%llx\n", bin->hdr->e_shoff);
+  printf("Processor flags:            %d\n", bin->hdr->e_flags);
+  printf("Header size:                %d\n", bin->hdr->e_ehsize);
+  printf("Program header size:        %d\n", bin->hdr->e_phentsize);
+  printf("Program headers:            %d\n", bin->hdr->e_phnum);
+  printf("Section header size:        %d\n", bin->hdr->e_shentsize);
+  printf("Section headers:            %d\n", bin->hdr->e_shnum);
+  printf("Section string table index: %d\n", bin->hdr->e_shstrndx);
+  printf("===========================\n\n");
+}
+
+void
+print_program_headers(elf_bin_t* bin) {
+  Elf64_Phdr* tmp_phdr = bin->phdr;
+  char* phdr_str = calloc(1, 1024);
+  char* perms_str = calloc(1, 1024);
+
+  printf("Elf program headers\n");
+  printf("===========================\n");
+
+  for (int i = 0; i < bin->hdr->e_phnum; i++) {
+    phdr_str = get_program_header_from_int(tmp_phdr->p_type);
+    perms_str = get_phdr_perms_from_int(tmp_phdr->p_flags);
+
+    printf("Type:        %s        \n",   phdr_str);
+    printf("Perms:       %s        \n",   perms_str);
+    printf("Offset:      0x%llx    \n",   tmp_phdr->p_offset);
+    printf("Vaddr:       0x%llx    \n",   tmp_phdr->p_vaddr);
+    printf("Paddr:       0x%llx    \n",   tmp_phdr->p_paddr);
+    printf("Filesz:      0x%llx    \n",   tmp_phdr->p_filesz);
+    printf("Memsz:       0x%llx    \n",   tmp_phdr->p_memsz);
+    printf("Align:       0x%llx    \n\n", tmp_phdr->p_align);
+
+    tmp_phdr += sizeof(Elf64_Phdr);
+    phdr_str = NULL;
+    perms_str = NULL;
+  }
+  printf("===========================\n\n");
+}
+
+void
+describe_elf(elf_bin_t* bin)
+{
+  print_elf_header(bin);
+  print_program_headers(bin);
+
 }
 
 /*
@@ -177,17 +199,6 @@ unsigned long long parse_elf_header(FILE *fp, Elf64_Ehdr *ehdr) {
   fread(&ehdr->e_shstrndx,  sizeof(ehdr->e_shstrndx),  1, fp);
 
   return ehdr->e_entry;
-}
-
-void print_program_header(Elf64_Phdr *phdr) {
-  printf("Type:        %s        ",        map_phdr_types(phdr->p_type));
-  printf("Perms:       %s        ",     map_perms(phdr->p_flags));
-  printf("Offset:      0x%llx    ",  phdr->p_offset);
-  printf("Vaddr:       0x%llx    ",   phdr->p_vaddr);
-  printf("Paddr:       0x%llx    ",   phdr->p_paddr);
-  printf("Filesz:      0x%llx    ",  phdr->p_filesz);
-  printf("Memsz:       0x%llx    ",   phdr->p_memsz);
-  printf("Align:       0x%llx    \n", phdr->p_align);
 }
 
 void parse_program_header(FILE *fp, Elf64_Phdr *phdr) {
